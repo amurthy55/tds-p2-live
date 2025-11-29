@@ -101,7 +101,7 @@ def run_worker(initial_url: str):
         # -------------------------------
         # PHASE-2 LLM: Build script
         # -------------------------------
-        prompt = Phase2ScriptBuilder.make_prompt(facts, current_url)
+        prompt = Phase2ScriptBuilder._make_prompt(facts, current_url)
         logger.info("Phase2: calling LLM")
 
         llm_raw = phase2_llm(prompt)
