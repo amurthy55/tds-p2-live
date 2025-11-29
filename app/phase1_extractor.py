@@ -1,6 +1,33 @@
 # app/phase1_extractor.py
 import logging
 import re
+import logging
+import re
+
+# NEW
+import whisper
+import os
+
+# NEW: whisper model loaded once
+_whisper_model = whisper.load_model("base")
+
+
+def _transcribe_audio(local_path: str) -> str:
+    """
+    Transcribe any audio file using Whisper.
+    Returns plain text transcription or '' on failure.
+    """
+    if not local_path or not os.path.exists(local_path):
+        return ""
+
+    try:
+        result = _whisper_model.transcribe(local_path)
+        text = result.get("text", "").strip()
+        return text
+    except Exception as e:
+        logger.error(f"Audio transcription failed for {local_path}: {e}")
+        return ""
+
 
 logger = logging.getLogger("phase1.extractor")
 
@@ -31,16 +58,28 @@ def _clean_contents(text: str) -> str:
 def identify_quiz_components(all_pages: list) -> dict:
     """
     Convert raw scraper output into structured format for Phase-2 LLM.
+    - Cleans HTML text
+    - Transcribes audio attachments (if any)
+    - Appends transcription into contents
     """
     structured_pages = []
 
     for p in all_pages:
         cleaned_text = _clean_contents(p.get("text", "") or "")
+        attachments = p.get("attachments", [])
+
+        # NEW: detect audio + transcribe
+        for att in attachments:
+            ctype = att.get("content_type", "")
+            if ctype.startswith("audio/"):
+                transcript = _transcribe_audio(att.get("local_path", ""))
+                if transcript:
+                    cleaned_text += f"\n\n[Audio transcription from {att.get('filename')}]:\n{transcript}\n"
 
         structured_pages.append({
             "url": p.get("url"),
             "contents": cleaned_text,
-            "attachments": p.get("attachments", [])
+            "attachments": attachments
         })
 
     return {"pages": structured_pages}
