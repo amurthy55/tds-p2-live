@@ -51,9 +51,11 @@ def llm_openai(prompt: str, max_tokens: int = 1500, model: str = "gpt-5.1-mini")
 
 def phase2_llm(prompt: str, max_tokens: int = 1500) -> str:
     try:
-        raw = llm_aipipe(prompt, max_tokens=max_tokens)
-    except Exception:
         raw = llm_openai(prompt, max_tokens=max_tokens)
+    except Exception:
+        raw = llm_aipipe(prompt, max_tokens=max_tokens)
+        
+        
 
     # --- STRIP MARKDOWN FENCES ---
     cleaned = (
